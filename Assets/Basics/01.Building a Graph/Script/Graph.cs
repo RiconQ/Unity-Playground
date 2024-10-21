@@ -9,6 +9,9 @@ namespace BuildingAGraph
         [Range(10, 100)]
         [SerializeField] private int _resolution = 20;
 
+        [SerializeField]
+        private FunctionLibrary.EFunctionName _function;
+
         private Transform[] _points;
 
         private void Awake()
@@ -35,12 +38,26 @@ namespace BuildingAGraph
 
         private void Update()
         {
+            FunctionLibrary.Function f = FunctionLibrary.GetFunction(_function);
+            float time = Time.time;
             for (int i = 0; i < _points.Length; i++)
             {
                 Transform point = _points[i];
                 Vector3 position = point.localPosition;
+                /*if (_function == 0)
+                {
+                    position.y = FunctionLibrary.Wave(position.x, time);
+                }
+                else if(_function == 1) 
+                {
+                    position.y = FunctionLibrary.MultiWave(position.x, time);
+                }
+                else
+                {
+                    position.y = FunctionLibrary.Ripple(position.x, time);
+                }*/
 
-                position.y = Mathf.Sin((Mathf.PI * (position.x + Time.time)));
+                position.y = f(position.x, position.z, time);
                 point.localPosition = position;
             }
         }
