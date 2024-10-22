@@ -17,21 +17,31 @@ namespace BuildingAGraph
         private void Awake()
         {
             float step = 2f / _resolution;
-            var position = Vector3.zero;
+           // var position = Vector3.zero;
             var scale = Vector3.one * step;
-            _points = new Transform[_resolution];
+            _points = new Transform[_resolution * _resolution];
 
             for (int i = 0; i < _points.Length; i++)
             {
+                /*  if (x == _resolution)
+                  {
+                      x = 0;
+                      z += 1;
+                      z += 1;
+                */
+
+
                 Transform point = Instantiate(_pointPrefab);
                 _points[i] = point;
-                position.x = (i + 0.5f) * step - 1f;
-
+                /*
+                position.x = (x + 0.5f) * step - 1f;
+                position.z = (z + 0.5f) * step - 1f;
+                */
                 // position.y = position.x * position.x * position.x;
 
-                point.localPosition = position;
-                point.localScale = scale;
+                //point.localPosition = position;
 
+                point.localScale = scale;
                 point.SetParent(transform, false);
             }
         }
@@ -40,25 +50,20 @@ namespace BuildingAGraph
         {
             FunctionLibrary.Function f = FunctionLibrary.GetFunction(_function);
             float time = Time.time;
-            for (int i = 0; i < _points.Length; i++)
+            float step = 2f / _resolution;
+            float v = 0.5f * step - 1f;
+            for (int i = 0, x = 0, z = 0; i < _points.Length; i++, x++)
             {
-                Transform point = _points[i];
-                Vector3 position = point.localPosition;
-                /*if (_function == 0)
+                if (x == _resolution)
                 {
-                    position.y = FunctionLibrary.Wave(position.x, time);
+                    x = 0;
+                    z += 1;
+                    v = (z + 0.5f) * step - 1f;
                 }
-                else if(_function == 1) 
-                {
-                    position.y = FunctionLibrary.MultiWave(position.x, time);
-                }
-                else
-                {
-                    position.y = FunctionLibrary.Ripple(position.x, time);
-                }*/
 
-                position.y = f(position.x, position.z, time);
-                point.localPosition = position;
+                float u = (x + 0.5f) * step - 1f;
+                //float v = (z + 0.5f) * step - 1f;
+                _points[i].localPosition = f(u, v, time);
             }
         }
     }
