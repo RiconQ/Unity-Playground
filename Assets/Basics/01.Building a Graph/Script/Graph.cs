@@ -1,12 +1,12 @@
 using System;
 using UnityEngine;
 
-namespace BuildingAGraph
+namespace Basics
 {
     public class Graph : MonoBehaviour
     {
         [SerializeField] private Transform _pointPrefab;
-        [Range(10, 100)]
+        [Range(10, 200)]
         [SerializeField] private int _resolution = 20;
 
         [SerializeField]

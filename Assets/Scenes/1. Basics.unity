@@ -294,7 +294,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &543344191
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -308,10 +308,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _pointPrefab: {fileID: 1531646816850225263, guid: 261b03e98dc7147428662de171da6f25, type: 3}
-  _resolution: 100
-  _function: 4
-  _transitionMode: 1
-  _functionDuration: 1
+  _resolution: 200
+  _function: 0
+  _transitionMode: 0
+  _functionDuration: 20
   _transitionDuration: 1
 --- !u!4 &543344192
 Transform:
@@ -320,6 +320,55 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 543344190}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &635157598
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 635157600}
+  - component: {fileID: 635157599}
+  m_Layer: 0
+  m_Name: GPU Graph
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &635157599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 635157598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e50c0c7dbf69d44d99e3af01204a23d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _resolution: 200
+  _function: 0
+  _transitionMode: 0
+  _functionDuration: 1
+  _transitionDuration: 1
+--- !u!4 &635157600
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 635157598}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -955,5 +1004,6 @@ SceneRoots:
   - {fileID: 705507995}
   - {fileID: 543344192}
   - {fileID: 1328507773}
+  - {fileID: 635157600}
   - {fileID: 2134547731}
   - {fileID: 1211414564}
