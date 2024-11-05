@@ -11,11 +11,13 @@ namespace Basics
         [SerializeField] private Material material;
         [SerializeField] private Mesh mesh;
 
-        [Range(10, 200)]
-        [SerializeField] private int _resolution = 20;
+        const int maxResolution = 200;
+
+        [Range(10, maxResolution)]
+        [SerializeField] private int resolution = 20;
 
         [SerializeField]
-        private FunctionLibrary.EFunctionName _function;
+        private FunctionLibrary.EFunctionName function;
 
         public enum ETransitionMode { Cycle, Random }
         [SerializeField]
@@ -28,39 +30,53 @@ namespace Basics
         private bool transitioning;
         private FunctionLibrary.EFunctionName _transitionFunction;
 
-        private ComputeBuffer _positionsBuffer;
+        private ComputeBuffer positionsBuffer;
 
 
         static readonly int
             positionsId = Shader.PropertyToID("_Positions"),
             resolutionId = Shader.PropertyToID("_Resolution"),
             stepId = Shader.PropertyToID("_Step"),
-            timeId = Shader.PropertyToID("_Time");
+            timeId = Shader.PropertyToID("_Time"),
+            transitionProgressId = Shader.PropertyToID("_TransitionProgress");
 
         private void UpdateFunctionOnGPU()
         {
-            float step = 2f / _resolution;
-            computeShader.SetInt(resolutionId, _resolution);
+            float step = 2f / resolution;
+            computeShader.SetInt(resolutionId, resolution);
             computeShader.SetFloat(stepId, step);
             computeShader.SetFloat(timeId, Time.time);
-            computeShader.SetBuffer(0, positionsId, _positionsBuffer);
 
-            int groups = Mathf.CeilToInt(_resolution / 8f);
-            computeShader.Dispatch(0, groups, groups, 1);
+            if (transitioning)
+            {
+                computeShader.SetFloat(
+                    transitionProgressId,
+                    Mathf.SmoothStep(0f, 1f, _duration / _transitionDuration)
+                );
+            }
+            var kernelIndex =
+                (int)function + (int)(transitioning ? _transitionFunction : function) * 5;
+            computeShader.SetBuffer(kernelIndex, positionsId, positionsBuffer);
 
-            var bounds = new Bounds(Vector3.zero, Vector3.one * (2f + 2f / _resolution));
-            Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, _positionsBuffer.count);
+            int groups = Mathf.CeilToInt(resolution / 8f);
+            computeShader.Dispatch(kernelIndex, groups, groups, 1);
+
+            material.SetBuffer(positionsId, positionsBuffer);
+            material.SetFloat(stepId, step);
+
+            var bounds = new Bounds(Vector3.zero, Vector3.one * (2f + 2f / resolution));
+            Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, maxResolution * maxResolution);
         }
 
-        private void Enable()
+        private void OnEnable()
         {
-            _positionsBuffer = new ComputeBuffer(_resolution * _resolution, 3 * 4);
+            positionsBuffer = new ComputeBuffer(maxResolution * maxResolution, 3 * 4);
         }
 
         private void OnDisable()
         {
-            _positionsBuffer.Release();
-            _positionsBuffer = null;
+            positionsBuffer.Release();
+            positionsBuffer = null;
         }
 
         private void Update()
@@ -78,7 +94,7 @@ namespace Basics
             {
                 _duration -= _functionDuration;
                 transitioning = true;
-                _transitionFunction = _function;
+                _transitionFunction = function;
                 //_function = FunctionLibrary.GetNextFunctionName(_function);
                 PickNextFunction();
             }
@@ -88,9 +104,9 @@ namespace Basics
 
         private void PickNextFunction()
         {
-            _function = _transitionMode == ETransitionMode.Cycle ?
-                FunctionLibrary.GetNextFunctionName(_function) :
-                FunctionLibrary.GetRandomFunctionNameOtherThan(_function);
+            function = _transitionMode == ETransitionMode.Cycle ?
+                FunctionLibrary.GetNextFunctionName(function) :
+                FunctionLibrary.GetRandomFunctionNameOtherThan(function);
         }
     }
 }
