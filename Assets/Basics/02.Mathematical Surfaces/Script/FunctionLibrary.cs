@@ -1,4 +1,5 @@
 using UnityEngine;
+using static Basics.FunctionLibrary;
 using static UnityEngine.Mathf;
 
 namespace Basics
@@ -17,15 +18,12 @@ namespace Basics
         }
         private static Function[] functions = { Wave, MultiWave, Ripple, Sphere, Torus };
 
-        public static Function GetFunction(EFunctionName name)
-        {
-            return functions[(int)name];
-        }
+        public static int FunctionCount => functions.Length;
 
-        public static EFunctionName GetNextFunctionName(EFunctionName name)
-        {
-            return (int)name < functions.Length - 1 ? name + 1 : 0;
-        }
+        public static Function GetFunction(EFunctionName name) => functions[(int)name];
+
+        public static EFunctionName GetNextFunctionName(EFunctionName name) =>
+            (int)name < functions.Length - 1 ? name + 1 : 0;
 
         public static EFunctionName GetRandomFunctionNameOtherThan(EFunctionName name)
         {

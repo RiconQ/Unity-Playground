@@ -55,10 +55,12 @@ namespace Basics
                 );
             }
             var kernelIndex =
-                (int)function + (int)(transitioning ? _transitionFunction : function) * 5;
+                (int)function + (int)(transitioning ? _transitionFunction : function) * FunctionLibrary.FunctionCount;
+            //var kernelIndex = (int)function;
             computeShader.SetBuffer(kernelIndex, positionsId, positionsBuffer);
 
             int groups = Mathf.CeilToInt(resolution / 8f);
+            Debug.Log(kernelIndex);
             computeShader.Dispatch(kernelIndex, groups, groups, 1);
 
             material.SetBuffer(positionsId, positionsBuffer);
