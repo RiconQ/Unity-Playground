@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Fractal : MonoBehaviour
+public class Fractal_New : MonoBehaviour
 {
     struct FractalPart
     {
