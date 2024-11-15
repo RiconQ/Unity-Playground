@@ -1,144 +1,98 @@
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
+
+using static Unity.Mathematics.math;
+using quaternion = Unity.Mathematics.quaternion;
 
 public class Fractal_New : MonoBehaviour
 {
-    struct UpdateFractalLevelJob : IJobFor 
+
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Fast, CompileSynchronously = true)]
+    struct UpdateFractalLevelJob : IJobFor
     {
+
         public float spinAngleDelta;
         public float scale;
 
         [ReadOnly]
         public NativeArray<FractalPart> parents;
+
         public NativeArray<FractalPart> parts;
 
         [WriteOnly]
-        public NativeArray<Matrix4x4> matrices;
+        public NativeArray<float3x4> matrices;
 
-        public void Execute(int i) 
+        public void Execute(int i)
         {
             FractalPart parent = parents[i / 5];
             FractalPart part = parts[i];
-            //part.rotation *= deltaRotation;
             part.spinAngle += spinAngleDelta;
-            part.worldRotation =
-                parent.worldRotation *
-                (part.rotation * Quaternion.Euler(0f, part.spinAngle, 0f));
+            part.worldRotation = mul(parent.worldRotation,
+                mul(part.rotation, quaternion.RotateY(part.spinAngle))
+            );
             part.worldPosition =
                 parent.worldPosition +
-                parent.worldRotation * (1.5f * scale * part.direction);
+                mul(parent.worldRotation, 1.5f * scale * part.direction);
             parts[i] = part;
 
-            matrices[i] = Matrix4x4.TRS
-                (
-                part.worldPosition, part.worldRotation, scale * Vector3.one
-                );
+            float3x3 r = float3x3(part.worldRotation) * scale;
+            matrices[i] = float3x4(r.c0, r.c1, r.c2, part.worldPosition);
         }
     }
-
 
     struct FractalPart
     {
-        public Vector3 direction, worldPosition;
-        public Quaternion rotation, worldRotation;
+        public float3 direction, worldPosition;
+        public quaternion rotation, worldRotation;
         public float spinAngle;
-        //public Transform transform;
     }
 
-    NativeArray<FractalPart>[] parts;
-    NativeArray<Matrix4x4>[] matrices;
+    static readonly int matricesId = Shader.PropertyToID("_Matrices");
 
-    static readonly int matricesID = Shader.PropertyToID("_Matrices");
+    static float3[] directions = {
+        up(), right(), left(), forward(), back()
+    };
 
-    [SerializeField, Range(1, 8)] private int depth = 4;
+    static quaternion[] rotations = {
+        quaternion.identity,
+        quaternion.RotateZ(-0.5f * PI), quaternion.RotateZ(0.5f * PI),
+        quaternion.RotateX(0.5f * PI), quaternion.RotateX(-0.5f * PI)
+    };
 
-    /*
-    private void Start()
-    {
-        name = "Fractal " + depth;
-
-        if(depth <= 1)
-        {
-            return;
-        }
-        Fractal_New childA = CreateChild(Vector3.up, Quaternion.identity);
-        Fractal_New childB = CreateChild(Vector3.right, Quaternion.Euler(0f, 0f, -90f));
-        Fractal_New childC = CreateChild(Vector3.left, Quaternion.Euler(0f, 0f, 90f));
-        Fractal_New childD = CreateChild(Vector3.forward, Quaternion.Euler(90f, 0f, 0f));
-        Fractal_New childE = CreateChild(Vector3.back, Quaternion.Euler(-90f, 0f, 0f));
-
-        childA.transform.SetParent(transform, false);
-        childB.transform.SetParent(transform, false);
-        childC.transform.SetParent(transform, false);
-        childD.transform.SetParent(transform, false);
-        childE.transform.SetParent(transform, false);
-    }
-
-    private void Update()
-    {
-        transform.Rotate(0f, 22.5f * Time.deltaTime, 0f);
-    }
-
-    Fractal_New CreateChild (Vector3 direction, Quaternion rotation)
-    {
-        Fractal_New child = Instantiate (this);
-        child.depth = depth - 1;
-        child.transform.localPosition = 0.75f * direction;
-        child.transform.localRotation = rotation;
-        child.transform.localScale = 0.5f * Vector3.one;
-        return child;
-    }
-    */
-
-    [SerializeField] private Mesh mesh;
-    [SerializeField] Material material;
-
-    ComputeBuffer[] matricesBuffers;
     static MaterialPropertyBlock propertyBlock;
 
+    [SerializeField, Range(1, 8)]
+    int depth = 4;
 
-    static Vector3[] directions =
-    {
-        Vector3.up, Vector3.right, Vector3.left, Vector3.forward, Vector3.back
-    };
+    [SerializeField]
+    Mesh mesh;
 
-    static Quaternion[] rotations =
-    {
-        Quaternion.identity,
-        Quaternion.Euler(0f, 0f, -90f), Quaternion.Euler(0f, 0f, 90f),
-        Quaternion.Euler(90f, 0f, 0f), Quaternion.Euler(-90f, 0f, 0f)
-    };
+    [SerializeField]
+    Material material;
 
-    private void OnValidate()
-    {
-        if (parts != null && enabled)
-        {
-            OnDisable();
-            OnEnable();
-        }
-    }
+    NativeArray<FractalPart>[] parts;
 
-    private void OnEnable()
+    NativeArray<float3x4>[] matrices;
+
+    ComputeBuffer[] matricesBuffers;
+
+    void OnEnable()
     {
         parts = new NativeArray<FractalPart>[depth];
-        matrices = new NativeArray<Matrix4x4>[depth];
+        matrices = new NativeArray<float3x4>[depth];
         matricesBuffers = new ComputeBuffer[depth];
-        int stride = 16 * 4;
-
+        int stride = 12 * 4;
         for (int i = 0, length = 1; i < parts.Length; i++, length *= 5)
         {
             parts[i] = new NativeArray<FractalPart>(length, Allocator.Persistent);
-            matrices[i] = new NativeArray<Matrix4x4>(length, Allocator.Persistent);
+            matrices[i] = new NativeArray<float3x4>(length, Allocator.Persistent);
             matricesBuffers[i] = new ComputeBuffer(length, stride);
         }
 
         parts[0][0] = CreatePart(0);
-
-        // li : Level Index
-        // fpi : Fractal Part Iterator
-        // ci : Child Index
         for (int li = 1; li < parts.Length; li++)
         {
             NativeArray<FractalPart> levelParts = parts[li];
@@ -150,13 +104,14 @@ public class Fractal_New : MonoBehaviour
                 }
             }
         }
+
         propertyBlock ??= new MaterialPropertyBlock();
     }
 
-    private void OnDisable()
+    void OnDisable()
     {
         for (int i = 0; i < matricesBuffers.Length; i++)
-        { 
+        {
             matricesBuffers[i].Release();
             parts[i].Dispose();
             matrices[i].Dispose();
@@ -166,25 +121,36 @@ public class Fractal_New : MonoBehaviour
         matricesBuffers = null;
     }
 
-    private void Update()
+    void OnValidate()
     {
-        float spinAngleDelta = 22.5f * Time.deltaTime;
+        if (parts != null && enabled)
+        {
+            OnDisable();
+            OnEnable();
+        }
+    }
+
+    FractalPart CreatePart(int childIndex) => new FractalPart
+    {
+        direction = directions[childIndex],
+        rotation = rotations[childIndex]
+    };
+
+    void Update()
+    {
+        float spinAngleDelta = 0.125f * PI * Time.deltaTime;
         FractalPart rootPart = parts[0][0];
         rootPart.spinAngle += spinAngleDelta;
-        rootPart.worldRotation =
-            transform.rotation *
-            (rootPart.rotation * Quaternion.Euler(0f, rootPart.spinAngle, 0f));
+        rootPart.worldRotation = mul(transform.rotation,
+            mul(rootPart.rotation, quaternion.RotateY(rootPart.spinAngle))
+        );
         rootPart.worldPosition = transform.position;
         parts[0][0] = rootPart;
         float objectScale = transform.lossyScale.x;
-        matrices[0][0] = Matrix4x4.TRS
-            (
-            rootPart.worldPosition, rootPart.worldRotation, objectScale * Vector3.one
-            );
+        float3x3 r = float3x3(rootPart.worldRotation) * objectScale;
+        matrices[0][0] = float3x4(r.c0, r.c1, r.c2, rootPart.worldPosition);
 
-        float sclae = objectScale;
-
-        float scale = 1f;
+        float scale = objectScale;
         JobHandle jobHandle = default;
         for (int li = 1; li < parts.Length; li++)
         {
@@ -196,7 +162,7 @@ public class Fractal_New : MonoBehaviour
                 parents = parts[li - 1],
                 parts = parts[li],
                 matrices = matrices[li]
-            }.Schedule(parts[li].Length, jobHandle); 
+            }.ScheduleParallel(parts[li].Length, 5, jobHandle);
         }
         jobHandle.Complete();
 
@@ -205,14 +171,10 @@ public class Fractal_New : MonoBehaviour
         {
             ComputeBuffer buffer = matricesBuffers[i];
             buffer.SetData(matrices[i]);
-            propertyBlock.SetBuffer(matricesID, buffer);
-            Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, buffer.count, propertyBlock);
+            propertyBlock.SetBuffer(matricesId, buffer);
+            Graphics.DrawMeshInstancedProcedural(
+                mesh, 0, material, bounds, buffer.count, propertyBlock
+            );
         }
     }
-
-    private FractalPart CreatePart(int childIndex) => new FractalPart
-    {
-        direction = directions[childIndex],
-        rotation = rotations[childIndex]
-    };
 }
