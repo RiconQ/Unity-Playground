@@ -548,8 +548,8 @@ MonoBehaviour:
   material: {fileID: 2100000, guid: 0b786459383ee7e408a9583c5608c362, type: 2}
   gradientA:
     serializedVersion: 2
-    key0: {r: 1, g: 1, b: 1, a: 1}
-    key1: {r: 1, g: 0, b: 0, a: 1}
+    key0: {r: 1, g: 1, b: 1, a: 0.3137255}
+    key1: {r: 1, g: 0, b: 0, a: 0.54901963}
     key2: {r: 0, g: 0, b: 0, a: 0}
     key3: {r: 0, g: 0, b: 0, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
@@ -578,8 +578,8 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   gradientB:
     serializedVersion: 2
-    key0: {r: 0, g: 0.16586065, b: 1, a: 1}
-    key1: {r: 1, g: 1, b: 1, a: 1}
+    key0: {r: 0, g: 0.16586065, b: 1, a: 0.3529412}
+    key1: {r: 1, g: 1, b: 1, a: 0.627451}
     key2: {r: 1, g: 0.9104991, b: 0, a: 0}
     key3: {r: 0, g: 0, b: 0, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
@@ -606,8 +606,13 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 3
     m_NumAlphaKeys: 2
-  leafColorA: {r: 0.38614988, g: 1, b: 0, a: 1}
-  leafColorB: {r: 0, g: 0.4433962, b: 0.08694048, a: 1}
+  leafColorA: {r: 0, g: 0, b: 0, a: 0.5019608}
+  leafColorB: {r: 0, g: 0, b: 0, a: 0.9019608}
+  maxSagAngleA: 15
+  maxSagAngleB: 25
+  spinSpeedA: 0
+  spinSpeedB: 90
+  reverseSpinChance: 0.25
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
